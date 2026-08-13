@@ -1,5 +1,6 @@
 /**
- * WebMCP type declarations for navigator.modelContext and plugin globals.
+ * WebMCP type declarations for document.modelContext, its deprecated navigator
+ * predecessor, and the plugin globals.
  */
 
 interface McpResult {
@@ -35,7 +36,19 @@ interface WmcpBridgeConfig {
 	nonce: string;
 }
 
+/**
+ * The spec moved this surface from navigator to document on 21 July 2026, and
+ * Chromium has since removed the navigator one. document is where it lives now;
+ * navigator stays declared, and optional, because the origin trial still serves
+ * it to builds that predate the move. Both are optional so the runtime feature
+ * test in webmcp-abilities.ts stays honest rather than being typed away.
+ */
+interface Document {
+	modelContext?: ModelContext;
+}
+
 interface Navigator {
+	/** @deprecated Removed in Chromium. Use document.modelContext. */
 	modelContext?: ModelContext;
 }
 

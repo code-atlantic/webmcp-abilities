@@ -28,7 +28,19 @@ interface ToolsResponse {
 	'use strict';
 
 	// Guard: only run in browsers that support the WebMCP API.
-	if ( typeof navigator === 'undefined' || ! ( 'modelContext' in navigator ) ) {
+	//
+	// The spec moved the surface from navigator to document on 21 July 2026, and
+	// Chromium then removed navigator.modelContext outright. Both are checked,
+	// document first, because the origin trial (Chrome 149-156) still serves the
+	// navigator path to builds that predate the move. Whichever one answers is
+	// the one every later call uses, so there is a single source of truth here
+	// rather than a second feature test further down.
+	const modelContext: ModelContext | null =
+		( typeof document !== 'undefined' && document.modelContext ) ||
+		( typeof navigator !== 'undefined' && navigator.modelContext ) ||
+		null;
+
+	if ( ! modelContext ) {
 		return;
 	}
 
@@ -209,7 +221,10 @@ interface ToolsResponse {
 	// Register all tools with navigator.modelContext.
 	// -------------------------------------------------------------------------
 
-	async function registerTools(): Promise< void > {
+	// Takes the surface as an argument rather than reading the outer variable:
+	// the null check above does not narrow inside this closure, and an assertion
+	// here would just be hiding that from the compiler.
+	async function registerTools( mc: ModelContext ): Promise< void > {
 		let tools: ToolDefinition[];
 		try {
 			tools = await fetchTools();
@@ -257,12 +272,12 @@ interface ToolsResponse {
 
 		// provideContext() atomically replaces the full tool set — safer than
 		// looping registerTool() which throws on duplicate names.
-		navigator.modelContext!.provideContext( { tools: mcpTools } );
+		mc.provideContext( { tools: mcpTools } );
 	}
 
 	// -------------------------------------------------------------------------
 	// Entry point.
 	// -------------------------------------------------------------------------
 
-	registerTools();
+	registerTools( modelContext );
 } )();
